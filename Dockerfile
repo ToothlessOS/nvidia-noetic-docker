@@ -120,6 +120,9 @@ RUN ./waf
 RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh && \
     chmod a+x install_geographiclib_datasets.sh && \
     sudo ./install_geographiclib_datasets.sh
+# Set-up env var
+RUN echo "export PATH=$PATH:$HOME/.local/bin" >> ~/.bashrc
+RUN . ~/.bashrc
 
 # Install Gazebo plugin for ArduPilot Master
 WORKDIR /home/ros/dev
@@ -136,7 +139,10 @@ RUN echo 'source /usr/share/gazebo/setup.sh' >> /home/ros/.bashrc
 RUN echo 'export GAZEBO_MODEL_PATH=~/ardupilot_gazebo/models' >> ~/.bashrc
 RUN . ~/.bashrc
 
-WORKDIR /home/ros/dev
+WORKDIR /home/ros
+
+# Install a handful of utilities
+RUN sudo apt update && sudo apt install -y gedit htop
 
 COPY ./ros_entrypoint.sh /
 
