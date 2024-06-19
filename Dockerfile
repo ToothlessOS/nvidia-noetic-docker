@@ -68,13 +68,38 @@ ros-$ROS_DISTRO-gazebo* ;
 
 RUN chsh -s /bin/bash
 
+#Custom proxy settings
 RUN echo "export https_proxy=http://10.200.13.85:3128 && http_proxy=http://10.200.13.85:3128" >> /root/.bashrc
 RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc
 
 RUN export https_proxy=http://10.200.13.85:3128 && http_proxy=http://10.200.13.85:3128
 RUN exec bash && source /opt/ros/noetic/setup.bash
 RUN rosdep init
-RUN rosdep update  
+RUN rosdep update
+
+ARG UID=1000
+ARG GID=1000
+
+# Update the package list, install sudo, create a non-root user, and grant password-less sudo permissions
+RUN apt update && \
+    apt install -y sudo && \
+    addgroup --gid $GID nonroot && \
+    adduser --uid $UID --gid $GID --disabled-password --gecos "" nonroot && \
+    echo 'nonroot ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+# Default non-root user
+USER nonroot
+
+# Set the working directory
+WORKDIR /home/ros/dev
+RUN cd /home/ros/dev \
+    && mkdir share
+RUN chown -R nonroot:nonroot /home/ros/dev
+RUN chmod -R 755 /home/ros/dev
+
+# Clone Ardupilot Source
+RUN git clone --recurse-submodules https://github.com/ArduPilot/ardupilot.git
+
 COPY ./ros_entrypoint.sh /
 
 ENTRYPOINT ["/ros_entrypoint.sh"]
