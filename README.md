@@ -67,3 +67,7 @@ So far this only been tested on Linux machines.
 just keep patience:  
 ![](imgs/2024-06-15-00-09-46.png)
 ### Install NVIDIA container toolkit first!
+
+## Comments by ToothlessOS
+Add user 'nonroot' to fix permission problems & as a better practice
+Clone the source code for ardupilot(/home/ros/dev in ardupilot) in image setup

@@ -95,6 +95,11 @@ WORKDIR /home/ros/dev
 RUN chown -R nonroot:nonroot /home/ros/dev
 RUN chmod -R 755 /home/ros/dev
 
+# Clone Ardupilot Source
+RUN cd /home/ros/dev \
+    && mkdir share
+RUN git clone --recurse-submodules https://github.com/ArduPilot/ardupilot.git
+
 COPY ./ros_entrypoint.sh /
 
 ENTRYPOINT ["/ros_entrypoint.sh"]
