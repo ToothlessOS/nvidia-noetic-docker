@@ -3,6 +3,8 @@ FROM nvidia/opengl:1.2-glvnd-runtime-ubuntu20.04
 # Install packages without prompting the user to answer any questions
 ENV DEBIAN_FRONTEND noninteractive 
 
+RUN export https_proxy=http://10.200.13.85:3128 && http_proxy=http://10.200.13.85:3128
+
 # Install packages
 RUN apt update && apt install -y \
 build-essential \
