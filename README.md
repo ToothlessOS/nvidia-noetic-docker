@@ -69,5 +69,13 @@ just keep patience:
 ### Install NVIDIA container toolkit first!
 
 ## Comments by ToothlessOS
-Add user 'nonroot' to fix permission problems & as a better practice
-Clone the source code for ardupilot(/home/ros/dev in ardupilot) in image setup
+### Important
+Docker shells are non-login, which means the .profile is not accessed. Therefore, some environment variables are not setup properly. \n
+### Solution
+```
+source .profile
+```
+OR
+```
+docker container exec -it noetic_docker /bin/bash --login
+```
