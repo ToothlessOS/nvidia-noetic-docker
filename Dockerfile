@@ -59,6 +59,7 @@ ros-$ROS_DISTRO-control-toolbox \
 ros-$ROS_DISTRO-octomap-msgs \
 ros-$ROS_DISTRO-octomap-ros \
 ros-$ROS_DISTRO-mavros \
+ros-$ROS_DISTRO-mavros-extras \
 ros-$ROS_DISTRO-mavros-msgs \
 ros-$ROS_DISTRO-rviz-visual-tools \
 ros-$ROS_DISTRO-gazebo-plugins \
@@ -68,7 +69,7 @@ ros-$ROS_DISTRO-gazebo* ;
 
 RUN chsh -s /bin/bash
 
-#Custom proxy settings
+# Custom env_var settings for root
 RUN echo "export https_proxy=http://10.200.13.85:3128 && http_proxy=http://10.200.13.85:3128" >> /root/.bashrc
 RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc
 
@@ -83,22 +84,59 @@ ARG GID=1000
 # Update the package list, install sudo, create a non-root user, and grant password-less sudo permissions
 RUN apt update && \
     apt install -y sudo && \
-    addgroup --gid $GID nonroot && \
-    adduser --uid $UID --gid $GID --disabled-password --gecos "" nonroot && \
-    echo 'nonroot ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+    addgroup --gid $GID ros && \
+    adduser --uid $UID --gid $GID --disabled-password --gecos "" ros && \
+    echo 'ros ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
 # Default non-root user
-USER nonroot
+USER ros
 
 # Set the working directory
 WORKDIR /home/ros/dev
-RUN cd /home/ros/dev \
-    && mkdir share
-RUN chown -R nonroot:nonroot /home/ros/dev
-RUN chmod -R 755 /home/ros/dev
+RUN mkdir share
+
+# Install pip dependencies:
+RUN pip install future
+
+# Custom env_var settings for ros
+# If needed, the proxy can be 'unset' 
+RUN echo "export https_proxy=http://10.200.13.85:3128 && http_proxy=http://10.200.13.85:3128" >> /home/ros/.bashrc
+RUN echo "source /opt/ros/noetic/setup.bash" >> /home/ros/.bashrc
+RUN export https_proxy=http://10.200.13.85:3128 && http_proxy=http://10.200.13.85:3128
 
 # Clone Ardupilot Source
 RUN git clone --recurse-submodules https://github.com/ArduPilot/ardupilot.git
+WORKDIR /home/ros/dev/ardupilot
+# Install dependecies for Ardupilot
+# The $USER must be assgined for prereqs
+ARG USER=ros
+RUN Tools/environment_install/install-prereqs-ubuntu.sh -y
+RUN . ~/.profile
+# Build with sitl config (can be changed later)
+RUN ./waf configure --board sitl
+RUN ./waf clean 
+RUN ./waf
+# Install MAVROS
+RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh && \
+    chmod a+x install_geographiclib_datasets.sh && \
+    sudo ./install_geographiclib_datasets.sh
+
+# Install Gazebo plugin for ArduPilot Master
+WORKDIR /home/ros/dev
+RUN git clone https://github.com/khancyr/ardupilot_gazebo.git
+WORKDIR /home/ros/dev/ardupilot_gazebo
+# Build
+RUN mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j4 && \
+    sudo make install
+# Set env-var
+RUN echo 'source /usr/share/gazebo/setup.sh' >> /home/ros/.bashrc
+RUN echo 'export GAZEBO_MODEL_PATH=~/ardupilot_gazebo/models' >> ~/.bashrc
+RUN . ~/.bashrc
+
+WORKDIR /home/ros/dev
 
 COPY ./ros_entrypoint.sh /
 
