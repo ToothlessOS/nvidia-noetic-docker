@@ -1,6 +1,8 @@
 CONTAINER_NAME="noetic_docker"
-IMAGE_NAME="hf/nvidia-ros-noetic"
-SHARED_DIR="/home/toothlessos/projects/mas/docker_nvidia_noetic/shared_dir"
+IMAGE_NAME="toothlessos/nvidia-ros-noetic"
+# Configure the shared dir here
+CONTAINER_DIR="/home/ros/dev"
+HOST_DIR="/home/toothlessos/projects/mas/dev"
 XSOCK=/tmp/.X11-unix
 XAUTH=/tmp/.docker.xauth
 if [ ! -f $XAUTH ]
@@ -26,7 +28,7 @@ docker run -it \
     --volume="$XAUTH:$XAUTH" \
     --net=host \
     --gpus all \
-    --volume="$SHARED_DIR:$SHARED_DIR" \
+    --volume="$HOST_DIR:$CONTAINER_DIR" \
     --name=$CONTAINER_NAME \
     $IMAGE_NAME \
     bash
